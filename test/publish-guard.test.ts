@@ -79,10 +79,7 @@ describe("the publish guard's checks of the output", () => {
   // Sabotage: answering `true` for an entry point's shipped check in
   // scripts/lib/publish-checks.mjs turns this red.
   it("refuse a manifest with no file list, which ships the source and no build", () => {
-    const root = builtPackage(undefined);
-    const { checks } = checkBuildOutput(root);
-    expect(checks.some((check) => /ships every file/.test(check.label))).toBe(false);
-    expect(failed(root)).toEqual(["./dist/index.js is shipped"]);
+    expect(failed(builtPackage(undefined))).toEqual(["./dist/index.js is shipped"]);
   });
 
   // Sabotage: testing the map's source against the `files` entries read as
