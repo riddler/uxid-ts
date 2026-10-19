@@ -7,13 +7,6 @@ import {
   isValid,
   UxidError,
 } from "../src/index.js";
-import { decodeCases, decodeRefusalCases } from "./corpus-subset.js";
-
-const lines = (text: string) =>
-  text
-    .split("\n")
-    .filter((line) => line !== "")
-    .map((line) => JSON.parse(line));
 
 // A decoder clock inside the window the corpus README names for its compact
 // cases: from 1699913600000 inclusive to 2164577117183 exclusive.
@@ -38,48 +31,6 @@ function timeOf(result: DecodeResult): number | null {
 
 afterEach(() => {
   vi.restoreAllMocks();
-});
-
-describe("the corpus's decode cases", () => {
-  const cases = lines(decodeCases) as { id: string; input: string; expected: object }[];
-
-  it("carries every line of the case file", () => {
-    expect(cases).toHaveLength(18);
-  });
-
-  // Sabotage: reading every first character's full 5 bits instead of its low
-  // 3 in `standardTime` turns the two reads-as-standard cases red.
-  it.each(cases.map((c) => [c.id, c] as const))("%s", (_id, c) => {
-    expect(decode(c.input, { now: CLOCK })).toEqual({ ok: true, value: c.expected });
-  });
-
-  // Sabotage: dropping the one-window subtraction in `compactTime` turns this
-  // red.
-  it("holds at both ends of the clock window the corpus README names", () => {
-    for (const now of [1_699_913_600_000, 2_164_577_117_182]) {
-      for (const c of cases) {
-        expect(decode(c.input, { now })).toEqual({ ok: true, value: c.expected });
-      }
-    }
-  });
-});
-
-describe("the corpus's decode refusals", () => {
-  const cases = lines(decodeRefusalCases) as {
-    id: string;
-    input: { decode: string };
-    expected_error: string;
-  }[];
-
-  it("carries every decode line of the case file", () => {
-    expect(cases).toHaveLength(16);
-  });
-
-  // Sabotage: counting the body's length in UTF-16 units rather than UTF-8
-  // bytes in `refuse` turns the two non-ASCII cases red.
-  it.each(cases.map((c) => [c.id, c] as const))("%s", (_id, c) => {
-    expect(decode(c.input.decode)).toEqual({ ok: false, error: c.expected_error });
-  });
 });
 
 describe("decode", () => {

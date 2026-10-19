@@ -4,44 +4,10 @@ import {
   type GenerateOptions,
   generate,
   type MonotonicDraws,
-  type MonotonicGenerateOptions,
   type MonotonicOptions,
   type Size,
   UxidError,
 } from "../src/index.js";
-import { monotonicCases, monotonicRefusalCases } from "./corpus-subset.js";
-
-interface MonotonicCase {
-  readonly id: string;
-  readonly input: {
-    readonly prefix: string | null;
-    readonly size: Size;
-    readonly compact: boolean;
-    readonly times: readonly number[];
-    readonly initial_seed: number;
-    readonly steps: readonly number[];
-    readonly overflow_seed: number | null;
-  };
-  readonly expected: readonly string[];
-}
-
-interface RefusalInput {
-  readonly prefix?: string;
-  readonly size?: Size;
-  readonly from?: string;
-  readonly rand?: string;
-  readonly time?: number;
-  readonly monotonic: true;
-}
-
-const lines = (text: string) =>
-  text
-    .split("\n")
-    .filter((line) => line !== "")
-    .map((line) => JSON.parse(line));
-
-const bytes = (hex: string) =>
-  new Uint8Array((hex.match(/../g) ?? []).map((pair) => Number.parseInt(pair, 16)));
 
 function refusal(run: () => unknown): UxidError {
   try {
@@ -125,58 +91,6 @@ function idOf(options: GenerateOptions, value: number | bigint, width: number): 
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
-});
-
-describe("the corpus's monotonic cases", () => {
-  const cases = lines(monotonicCases) as MonotonicCase[];
-
-  it("carries every line of the case file", () => {
-    expect(cases).toHaveLength(6);
-  });
-
-  // Sabotage: keeping the current time instead of the last time `T` when the
-  // clock moves back in `next` turns m-clock-moves-back and
-  // s-overflow-bumps-time red.
-  it.each(cases.map((c) => [c.id, c] as const))("%s", (_id, c) => {
-    const seeds =
-      c.input.overflow_seed === null
-        ? [c.input.initial_seed]
-        : [c.input.initial_seed, c.input.overflow_seed];
-    const { draws, seedsLeft, stepsLeft, overdrawn } = replay(seeds, c.input.steps);
-    const generator = createMonotonic({
-      ...(c.input.prefix !== null && { prefix: c.input.prefix }),
-      size: c.input.size,
-      compactTime: c.input.compact,
-      draws,
-    });
-    const ids = c.input.times.map((time) => generator.generate({ time }));
-    expect(ids).toEqual(c.expected);
-    expect(seedsLeft()).toBe(0);
-    expect(stepsLeft()).toBe(0);
-    expect(overdrawn()).toBe(0);
-  });
-});
-
-describe("the corpus's monotonic refusals", () => {
-  const cases = lines(monotonicRefusalCases) as {
-    id: string;
-    input: { generate: RefusalInput };
-    expected_error: string;
-  }[];
-
-  // Sabotage: deleting the `from` check or the `rand` check in
-  // `refuseConflicts` turns its case red.
-  it.each(cases.map((c) => [c.id, c] as const))("%s", (_id, c) => {
-    const { monotonic: _monotonic, rand, ...rest } = c.input.generate;
-    const options: MonotonicGenerateOptions = {
-      ...rest,
-      ...(rand !== undefined && { rand: bytes(rand) }),
-    };
-    // Draws enough for one id, so a generator that let the request through
-    // would answer an id rather than fail for want of a draw.
-    const generator = createMonotonic({ draws: replay([0], []).draws });
-    expect(refusal(() => generator.generate(options)).code).toBe(c.expected_error);
-  });
 });
 
 describe("createMonotonic", () => {

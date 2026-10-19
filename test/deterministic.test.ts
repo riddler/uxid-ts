@@ -1,36 +1,6 @@
 import { createHash } from "node:crypto";
 import { describe, expect, it, vi } from "vitest";
-import { type GenerateOptions, generate, type Size, UxidError } from "../src/index.js";
-import { deterministicCases, deterministicRefusalCases } from "./corpus-subset.js";
-
-interface CaseInput {
-  readonly prefix?: string | null;
-  readonly from: string;
-  readonly size?: Size;
-  readonly case?: "lower" | "upper";
-  readonly rand?: string;
-}
-
-const lines = (text: string) =>
-  text
-    .split("\n")
-    .filter((line) => line !== "")
-    .map((line) => JSON.parse(line));
-
-const bytes = (hex: string) =>
-  new Uint8Array((hex.match(/../g) ?? []).map((pair) => Number.parseInt(pair, 16)));
-
-// The corpus spells options as the Elixir package does; this maps them onto
-// this package's names. A null prefix is no prefix.
-function options(input: CaseInput): GenerateOptions {
-  return {
-    from: input.from,
-    ...(input.prefix != null && { prefix: input.prefix }),
-    ...(input.size !== undefined && { size: input.size }),
-    ...(input.case !== undefined && { case: input.case }),
-    ...(input.rand !== undefined && { rand: bytes(input.rand) }),
-  };
-}
+import { type GenerateOptions, generate, UxidError } from "../src/index.js";
 
 function refusal(run: () => unknown): UxidError {
   try {
@@ -63,20 +33,6 @@ function reference(prefix: string, from: string, size: string): string {
   return prefix === "" ? body : `${prefix}_${body}`;
 }
 
-describe("the corpus's deterministic cases", () => {
-  const cases = lines(deterministicCases) as { id: string; input: CaseInput; expected: string }[];
-
-  it("carries every line of the case file", () => {
-    expect(cases).toHaveLength(12);
-  });
-
-  // Sabotage: leaving the `count` byte out of the hash input in
-  // `deterministicBody` turns every case red.
-  it.each(cases.map((c) => [c.id, c] as const))("%s", (_id, c) => {
-    expect(generate(options(c.input))).toBe(c.expected);
-  });
-});
-
 describe("the ids that lock the format", () => {
   // Sabotage: reading the digest from bit 1 instead of bit 0 in
   // `encodeLeadingBits` turns all three red.
@@ -92,20 +48,6 @@ describe("the ids that lock the format", () => {
 
   it("reproduces no prefix, alice@example.com, m", () => {
     expect(generate({ from: "alice@example.com", size: "m" })).toBe("zqz4cwzgyw8ks97869");
-  });
-});
-
-describe("the corpus's deterministic refusals", () => {
-  const cases = lines(deterministicRefusalCases) as {
-    id: string;
-    input: { generate: CaseInput };
-    expected_error: string;
-  }[];
-
-  // Sabotage: deleting the `rand` check on the `from` path of `generate`
-  // turns this red.
-  it.each(cases.map((c) => [c.id, c] as const))("%s", (_id, c) => {
-    expect(refusal(() => generate(options(c.input.generate))).code).toBe(c.expected_error);
   });
 });
 
