@@ -1,0 +1,159 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    name: Full quality gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    # No service containers. Every function in this package is pure over its
+    # arguments and a byte source, so the suite needs nothing but a JavaScript
+    # runtime; a database or a browser here would be a sign that something
+    # moved in that should not have.
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # The toolchain comes from mise.toml, provisioned by mise itself, so CI
+      # runs the gate through the same `mise exec --` command an agent runs
+      # locally (.claude/wurk.json gate.full), on the node and pnpm pinned
+      # there. A node or pnpm version written into this file would drift the
+      # first time mise.toml moves. The action installs mise at the version
+      # below, runs `mise install` against mise.toml, and caches the tools.
+      - uses: jdx/mise-action@v4
+        with:
+          version: 2026.8.2
+
+      # The pnpm store is the whole dependency cache. The key is derived from
+      # pnpm-lock.yaml, which is the whole pin: every dependency here is a
+      # public npm package, so nothing authenticates to anything and the
+      # default GITHUB_TOKEN with the read-only `contents` permission above is
+      # all this job needs.
+      - name: Resolve the toolchain and the pnpm store path
+        id: store
+        run: |
+          set -euo pipefail
+          echo "node=$(mise exec -- node --version)" >> "$GITHUB_OUTPUT"
+          echo "path=$(mise exec -- pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache the pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.store.outputs.path }}
+          key: pnpm-${{ runner.os }}-node${{ steps.store.outputs.node }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-${{ runner.os }}-node${{ steps.store.outputs.node }}-
+
+      - name: Install dependencies
+        run: mise exec -- pnpm install --frozen-lockfile
+
+      # The gate is the whole job: every stage of package.json's `gate`
+      # script, which lists them in one place so this comment does not.
+      #
+      # Same reasoning as the toolchain step, applied to the gate itself: the
+      # command is read out of .claude/wurk.json rather than written here, so
+      # the gate CI runs and the gate an agent must have green before
+      # committing are one definition with one place to change it. It is read
+      # and executed inside the step rather than interpolated into `run:`, so
+      # a repository file never reaches the shell as expression text.
+      - name: Full quality gate
+        run: |
+          set -euo pipefail
+          mapfile -t cmd < <(jq -er '.gate.full[]' .claude/wurk.json)
+          test "${#cmd[@]}" -gt 0 || { echo "gate.full is empty" >&2; exit 1; }
+          echo "gate command (.claude/wurk.json gate.full): ${cmd[*]}"
+          "${cmd[@]}"
+
+  oldest-node:
+    name: Suite on the oldest Node engines admits
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    # The published package has to run on a consumer's older runtime, so the
+    # suite runs a second time on the oldest Node line package.json's
+    # `engines.node` admits, while the gate above runs on the one node
+    # mise.toml pins. The floor is read out of package.json rather than written
+    # here, so moving the floor moves this job with no edit to this file. It is
+    # the latest release of the floor's major line: the floor names a line, and
+    # a patch release inside it is what a consumer on that line runs.
+    #
+    # Only the suite runs here. The dependencies are installed with the pinned
+    # toolchain, exactly as in the gate, and the suite then runs on the floor's
+    # node; typecheck, lint, the build and the docs answer the same on any
+    # node, and the gate has already answered them. The test runner's own
+    # declared engine range does not include every line this package admits;
+    # if a release of it stops running on the floor, this job goes red, and the
+    # answer is a decision about the floor, not a skip here.
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: jdx/mise-action@v4
+        with:
+          version: 2026.8.2
+
+      - name: Resolve the toolchain and the pnpm store path
+        id: store
+        run: |
+          set -euo pipefail
+          echo "node=$(mise exec -- node --version)" >> "$GITHUB_OUTPUT"
+          echo "path=$(mise exec -- pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache the pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.store.outputs.path }}
+          key: pnpm-${{ runner.os }}-node${{ steps.store.outputs.node }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-${{ runner.os }}-node${{ steps.store.outputs.node }}-
+
+      - name: Install dependencies
+        run: mise exec -- pnpm install --frozen-lockfile
+
+      # `engines.node` is read as a lower bound, `>=` and a major version with
+      # an optional minor and patch. Any other shape stops the job rather than
+      # guessing which line is the oldest.
+      - name: Read the oldest Node line engines admits
+        id: floor
+        run: |
+          set -euo pipefail
+          range="$(jq -er '.engines.node' package.json)"
+          bound='^>=[[:space:]]*([0-9]+)(\.[0-9]+){0,2}$'
+          if [[ ! "$range" =~ $bound ]]; then
+            echo "::error::engines.node is '${range}', not a single '>=' bound this job can read" >&2
+            exit 1
+          fi
+          echo "major=${BASH_REMATCH[1]}" >> "$GITHUB_OUTPUT"
+          echo "engines.node is '${range}'; the suite runs on the latest node ${BASH_REMATCH[1]}"
+
+      - name: Install the floor's node
+        env:
+          FLOOR: ${{ steps.floor.outputs.major }}
+        run: mise install "node@${FLOOR}"
+
+      # The suite's own entry is run by path under the floor's node, so no
+      # shim can reach a different node off the PATH, and the running major is
+      # checked against the floor before the suite starts.
+      - name: Run the suite on the floor's node
+        env:
+          FLOOR: ${{ steps.floor.outputs.major }}
+        run: |
+          set -euo pipefail
+          have="$(mise exec "node@${FLOOR}" -- node --version)"
+          echo "node ${have}"
+          test "${have%%.*}" = "v${FLOOR}" || { echo "::error::node ${have} is not on the ${FLOOR} line" >&2; exit 1; }
+          mise exec "node@${FLOOR}" -- node node_modules/vitest/vitest.mjs run
