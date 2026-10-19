@@ -149,10 +149,11 @@ mise exec -- pnpm run format      # rewrite formatting (the gate only checks it)
 ```
 
 The first two lines are the manifest's commands (`gate.loop` and `gate.full`
-in `.claude/wurk.json`), and the CI workflow will run `gate.full` as written there. The
-`mise exec --` prefix runs each command on the node and pnpm that `mise.toml`
-pins. The full gate's stages are listed in one place, package.json's `gate`
-script, and are not repeated here.
+in `.claude/wurk.json`), and the CI workflow (`.github/workflows/ci.yml`)
+runs `gate.full` as written there, then runs the suite again on the oldest
+Node line `engines.node` admits. The `mise exec --` prefix runs each command
+on the node and pnpm that `mise.toml` pins. The full gate's stages are listed
+in one place, package.json's `gate` script, and are not repeated here.
 
 ### This repo's own gate rules
 
