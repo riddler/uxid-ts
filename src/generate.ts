@@ -1,9 +1,11 @@
 /**
- * Time-based id generation: a time field followed by a random field, under an
- * optional prefix, as uxid's wire format lays them out.
+ * Id generation as uxid's wire format lays it out, under an optional prefix:
+ * a time field followed by a random field, or, given `from`, a deterministic
+ * body hashed from a string.
  */
 
 import { encodeBytes, encodeInteger, type LetterCase } from "./base32.js";
+import { deterministicBody } from "./deterministic.js";
 import { UxidError } from "./errors.js";
 import {
   type CanonicalSize,
@@ -30,9 +32,20 @@ export interface GenerateOptions {
   /**
    * The size, which fixes the random field's width: `xs`, `s`, `m`, `l` or
    * `xl`, or the long spellings `xsmall`, `small`, `medium`, `large` and
-   * `xlarge`. Defaults to `xl`.
+   * `xlarge`. Defaults to `xl`. With `from`, it fixes the number of hash
+   * characters instead.
    */
   readonly size?: Size;
+  /**
+   * A string to derive a deterministic id from: the same prefix, `from` and
+   * size always give the same id, in either letter case. The body is the
+   * marker `z` (`Z` in upper case) followed by characters of a SHA-256
+   * digest of the prefix and `from`, at the size's standard body length.
+   * Such an id is a name, not a secret: anyone who can guess `from` can
+   * compute it. With `from`, the options `time`, `compactTime`, `randSize`
+   * and `byteSource` do not apply and are not read, and `rand` is refused.
+   */
+  readonly from?: string;
   /**
    * An explicit random field width in bytes, from 0 to 10, which overrides
    * the size's width. A body of a width the size table does not list has the
@@ -81,6 +94,8 @@ const MARKER = 31;
  * generate({ prefix: "usr" }); // "usr_01..." with a fresh random field
  * generate({ prefix: "cus", size: "s", time: 1700000000000, rand: new Uint8Array([1, 35]) });
  * // "cus_01hf7yat0004h1"
+ * generate({ prefix: "usr", from: "alice@example.com" });
+ * // "usr_zcvt7epac0t1ebcsjfyf7cwz25", on every call
  * ```
  *
  * @throws {UxidError} when the options contradict each other or the format;
@@ -91,6 +106,16 @@ export function generate(options: GenerateOptions = {}): string {
   const delimiter = readDelimiter(options.delimiter);
   const prefix = readPrefix(options.prefix);
   const size = readSize(options.size);
+  if (options.from !== undefined) {
+    const from = readFrom(options.from);
+    if (options.rand !== undefined) {
+      throw new UxidError(
+        "rand_with_from",
+        "rand and from cannot be used together: a deterministic id has no random field",
+      );
+    }
+    return withPrefix(prefix, delimiter, deterministicBody(prefix, from, size, letterCase));
+  }
   const compactTime = readCompactTime(options.compactTime);
   const time = readTime(options.time);
   const width = readWidth(options.randSize, size, compactTime);
@@ -98,7 +123,16 @@ export function generate(options: GenerateOptions = {}): string {
     options.rand === undefined ? draw(width, options.byteSource) : fixed(options.rand, width);
 
   const body = encodeTime(time, compactTime, letterCase) + encodeBytes(rand, letterCase);
+  return withPrefix(prefix, delimiter, body);
+}
+
+function withPrefix(prefix: string, delimiter: string, body: string): string {
   return prefix === "" ? body : prefix + delimiter + body;
+}
+
+function readFrom(value: unknown): string {
+  if (typeof value === "string") return value;
+  throw invalid("from", "a string", value);
 }
 
 function invalid(option: string, expected: string, got: unknown): UxidError {

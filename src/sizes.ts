@@ -56,3 +56,20 @@ export function randBytesFor(size: CanonicalSize, compactTime: boolean): number 
   const row = RAND_BYTES[size];
   return compactTime ? row.compact : row.standard;
 }
+
+const HASH_CHARS: Readonly<Record<CanonicalSize, number>> = {
+  xs: 9,
+  s: 13,
+  m: 17,
+  l: 21,
+  xl: 25,
+};
+
+/**
+ * The number of hash characters in a deterministic body of a size: the body
+ * is the marker and these characters, so it is as long as the size's standard
+ * time body.
+ */
+export function hashCharsFor(size: CanonicalSize): number {
+  return HASH_CHARS[size];
+}
