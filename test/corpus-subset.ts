@@ -1,8 +1,9 @@
 // Cases copied verbatim, one JSON object per line, from the conformance
 // corpus of the Elixir uxid package at its tag v2.10.0: a hand-picked subset of
-// conformance/encode.json, and the lines of conformance/invalid.json whose
-// generation errors `generate` can raise. The full corpus replaces them once it
-// is vendored and run case by case.
+// conformance/encode.json, every line of conformance/deterministic.json, and
+// the lines of conformance/invalid.json whose generation errors `generate` can
+// raise. The full corpus replaces them once it is vendored and run case by
+// case.
 
 export const encodeCases = `{"expected":"usr_01hf7yat00","id":"encode/xs-standard-lower","input":{"case":"lower","compact":false,"prefix":"usr","rand":"","size":"xs","time":1700000000000}}
 {"expected":"usr_HF7YAT0001","id":"encode/xs-compact-upper","input":{"case":"upper","compact":true,"prefix":"usr","rand":"01","size":"xs","time":1700000000000}}
@@ -32,4 +33,21 @@ export const generateRefusalCases = `{"expected_error":"compact_time_out_of_rang
 {"expected_error":"rand_width_mismatch","id":"invalid/generate-rand-too-narrow","input":{"generate":{"prefix":"usr","rand":"010203040506070809","size":"xl","time":1700000000000}}}
 {"expected_error":"rand_width_mismatch","id":"invalid/generate-rand-on-xs-standard","input":{"generate":{"prefix":"usr","rand":"01","size":"xs","time":1700000000000}}}
 {"expected_error":"rand_size_too_large","id":"invalid/generate-rand-size-11","input":{"generate":{"prefix":"usr","rand_size":11,"size":"xl","time":1700000000000}}}
+`;
+
+export const deterministicCases = `{"expected":"usr_zcvt7epac0t1ebcsjfyf7cwz25","id":"deterministic/golden-usr-xl","input":{"case":"lower","from":"alice@example.com","prefix":"usr","size":"xl"}}
+{"expected":"cus_zt9vnyfd85bff0","id":"deterministic/golden-cus-s","input":{"case":"lower","from":"acme-corp","prefix":"cus","size":"s"}}
+{"expected":"zqz4cwzgyw8ks97869","id":"deterministic/golden-no-prefix-m","input":{"case":"lower","from":"alice@example.com","prefix":null,"size":"m"}}
+{"expected":"usr_z1yhw20vag","id":"deterministic/usr-xs","input":{"case":"lower","from":"alice@example.com","prefix":"usr","size":"xs"}}
+{"expected":"usr_z5rtsrkhx2h4dr","id":"deterministic/usr-s","input":{"case":"lower","from":"alice@example.com","prefix":"usr","size":"s"}}
+{"expected":"usr_zt8naccefxhwnrmscd","id":"deterministic/usr-m","input":{"case":"lower","from":"alice@example.com","prefix":"usr","size":"m"}}
+{"expected":"usr_zwbz6myvgz7ehe3nceap5n","id":"deterministic/usr-l","input":{"case":"lower","from":"alice@example.com","prefix":"usr","size":"l"}}
+{"expected":"usr_zcvt7epac0t1ebcsjfyf7cwz25","id":"deterministic/usr-xl","input":{"case":"lower","from":"alice@example.com","prefix":"usr","size":"xl"}}
+{"expected":"z4krgegf6drn563pvqhya4tsx9","id":"deterministic/empty-prefix-xl","input":{"case":"lower","from":"alice@example.com","prefix":"","size":"xl"}}
+{"expected":"z4krgegf6drn563pvqhya4tsx9","id":"deterministic/no-prefix-xl","input":{"case":"lower","from":"alice@example.com","prefix":null,"size":"xl"}}
+{"expected":"usr_ZCVT7EPAC0T1EBCSJFYF7CWZ25","id":"deterministic/usr-xl-upper","input":{"case":"upper","from":"alice@example.com","prefix":"usr","size":"xl"}}
+{"expected":"cus_zfsx9se75671f9kdjv","id":"deterministic/non-ascii-from-m","input":{"case":"lower","from":"café","prefix":"cus","size":"m"}}
+`;
+
+export const deterministicRefusalCases = `{"expected_error":"rand_with_from","id":"invalid/generate-rand-with-from","input":{"generate":{"from":"alice@example.com","prefix":"usr","rand":"00010203040506070809"}}}
 `;

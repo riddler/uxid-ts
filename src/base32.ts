@@ -52,3 +52,25 @@ export function encodeBytes(bytes: Uint8Array, letterCase: LetterCase): string {
   if (bits > 0) out += symbol(buffer, letterCase);
   return out;
 }
+
+/**
+ * Writes the first `count` 5-bit groups of `bytes`, most significant bit
+ * first, with no short group: every symbol carries five bits read from the
+ * bytes. The bytes must hold at least `count` x 5 bits.
+ */
+export function encodeLeadingBits(
+  bytes: Uint8Array,
+  count: number,
+  letterCase: LetterCase,
+): string {
+  let out = "";
+  for (let i = 0; i < count; i++) {
+    const bit = i * 5;
+    const index = bit >> 3;
+    // Two bytes always cover a 5-bit group; a group ending inside the last
+    // byte reads a zero beyond it and shifts that zero away.
+    const pair = ((bytes[index] as number) << 8) | (bytes[index + 1] ?? 0);
+    out += symbol((pair >> (11 - (bit & 7))) & 31, letterCase);
+  }
+  return out;
+}
