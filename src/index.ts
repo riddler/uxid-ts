@@ -17,4 +17,11 @@ export type { UxidErrorCode } from "./errors.js";
 export { UxidError } from "./errors.js";
 export type { ByteSource, GenerateOptions } from "./generate.js";
 export { generate } from "./generate.js";
+export type {
+  MonotonicDraws,
+  MonotonicGenerateOptions,
+  MonotonicGenerator,
+  MonotonicOptions,
+} from "./monotonic.js";
+export { createMonotonic } from "./monotonic.js";
 export type { Size } from "./sizes.js";

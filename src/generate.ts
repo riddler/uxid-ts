@@ -83,7 +83,8 @@ export interface GenerateOptions {
 }
 
 const DEFAULT_DELIMITER = "_";
-const MAX_TIME = 2 ** 48 - 1;
+/** The latest time a time body holds: 2^48 - 1 milliseconds. */
+export const MAX_TIME = 2 ** 48 - 1;
 const COMPACT_WINDOW = 2 ** 40;
 const MARKER = 31;
 
@@ -126,7 +127,7 @@ export function generate(options: GenerateOptions = {}): string {
   return withPrefix(prefix, delimiter, body);
 }
 
-function withPrefix(prefix: string, delimiter: string, body: string): string {
+export function withPrefix(prefix: string, delimiter: string, body: string): string {
   return prefix === "" ? body : prefix + delimiter + body;
 }
 
@@ -135,7 +136,7 @@ function readFrom(value: unknown): string {
   throw invalid("from", "a string", value);
 }
 
-function invalid(option: string, expected: string, got: unknown): UxidError {
+export function invalid(option: string, expected: string, got: unknown): UxidError {
   return new UxidError("invalid_option", `${option} must be ${expected}, got: ${describe(got)}`);
 }
 
@@ -143,38 +144,38 @@ function describe(value: unknown): string {
   return typeof value === "string" ? JSON.stringify(value) : String(value);
 }
 
-function readCase(value: unknown): LetterCase {
+export function readCase(value: unknown): LetterCase {
   if (value === undefined) return "lower";
   if (value === "lower" || value === "upper") return value;
   throw invalid("case", `"lower" or "upper"`, value);
 }
 
-function readDelimiter(value: unknown): string {
+export function readDelimiter(value: unknown): string {
   if (value === undefined) return DEFAULT_DELIMITER;
   if (typeof value === "string" && value !== "") return value;
   throw invalid("delimiter", "a non-empty string", value);
 }
 
-function readPrefix(value: unknown): string {
+export function readPrefix(value: unknown): string {
   if (value === undefined) return "";
   if (typeof value === "string") return value;
   throw invalid("prefix", "a string", value);
 }
 
-function readSize(value: unknown): CanonicalSize {
+export function readSize(value: unknown): CanonicalSize {
   if (value === undefined) return "xl";
   const size = typeof value === "string" ? canonicalSize(value) : undefined;
   if (size !== undefined) return size;
   throw invalid("size", "one of xs, s, m, l, xl or a long spelling", value);
 }
 
-function readCompactTime(value: unknown): boolean {
+export function readCompactTime(value: unknown): boolean {
   if (value === undefined) return false;
   if (typeof value === "boolean") return value;
   throw invalid("compactTime", "a boolean", value);
 }
 
-function readTime(value: unknown): number {
+export function readTime(value: unknown): number {
   const time = value === undefined ? Date.now() : value instanceof Date ? value.getTime() : value;
   if (typeof time === "number" && Number.isInteger(time) && time >= 0 && time <= MAX_TIME) {
     return time;
@@ -182,7 +183,7 @@ function readTime(value: unknown): number {
   throw invalid("time", "an integer count of milliseconds from 0 to 2^48 - 1, or a Date", value);
 }
 
-function readWidth(value: unknown, size: CanonicalSize, compactTime: boolean): number {
+export function readWidth(value: unknown, size: CanonicalSize, compactTime: boolean): number {
   if (value === undefined) return randBytesFor(size, compactTime);
   if (typeof value !== "number" || !Number.isInteger(value) || value < 0) {
     throw invalid("randSize", "a non-negative integer", value);
@@ -207,7 +208,7 @@ function fixed(rand: unknown, width: number): Uint8Array {
   return rand;
 }
 
-function draw(width: number, byteSource: unknown): Uint8Array {
+export function draw(width: number, byteSource: unknown): Uint8Array {
   if (width === 0) return new Uint8Array(0);
   const source = byteSource === undefined ? platformByteSource() : byteSource;
   if (typeof source !== "function") throw invalid("byteSource", "a function", byteSource);
@@ -236,7 +237,7 @@ function platformByteSource(): ByteSource {
   return (count) => getRandomValues.call(crypto, new Uint8Array(count));
 }
 
-function encodeTime(time: number, compactTime: boolean, letterCase: LetterCase): string {
+export function encodeTime(time: number, compactTime: boolean, letterCase: LetterCase): string {
   if (!compactTime) return encodeInteger(time, 10, letterCase);
   const low = time % COMPACT_WINDOW;
   if (Math.floor(low / 2 ** 35) === MARKER) {
