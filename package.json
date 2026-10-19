@@ -1,55 +1,66 @@
 {
   "name": "uxid",
   "version": "0.0.1",
-  "description": "User eXperience focused IDentifiers",
-  "main": "./dist/uxid.js",
-  "types": "./dist/uxid.d.js",
-  "scripts": {
-    "build": "tsc",
-    "format:check": "prettier --check '{src,test}/**/*.{js,ts}'",
-    "format": "prettier --write '{src,test}/**/*.{js,ts}'",
-    "lint": "eslint '*/**/*.{js,ts,ts}' --quiet --fix",
-    "test": "jest",
-    "test:coverage": "npm run test -- --coverage",
-    "test:watch": "npm run test -- --watch",
-    "test:fix": "npm run test -- --fix"
+  "description": "Prefixed, K-sortable identifiers a person can read, wire-compatible with the Elixir uxid package and checked against its conformance corpus.",
+  "license": "MIT",
+  "author": "JohnnyT <ubergeek3141@gmail.com>",
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
   },
+  "packageManager": "pnpm@12.4.2",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/riddler/uxid.git"
+    "url": "git+https://github.com/riddler/uxid-ts.git"
+  },
+  "bugs": {
+    "url": "https://github.com/riddler/uxid-ts/issues"
+  },
+  "homepage": "https://github.com/riddler/uxid-ts#readme",
+  "main": "./dist/index.cjs",
+  "types": "./dist/index.d.cts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
   },
   "files": [
-    "dist/uxid.js",
-    "dist/uxid.d.js",
-    "CHANGELOG.md",
-    "LICENSE.txt",
-    "README.md"
+    "dist",
+    "src",
+    "LICENSE",
+    "README.md",
+    "CHANGELOG.md"
   ],
-  "author": "JohnnyT <ubergeek3141@gmail.com>",
-  "license": "MIT",
   "publishConfig": {
     "access": "public"
   },
-  "bugs": {
-    "url": "https://github.com/riddler/uxid/issues"
-  },
-  "homepage": "https://github.com/riddler/uxid#readme",
-  "jest": {
-    "preset": "ts-jest"
+  "scripts": {
+    "gate": "node --version && pnpm run typecheck && pnpm run lint && pnpm run neutrality && vitest run --coverage && pnpm run build && pnpm run docs",
+    "gate:loop": "pnpm run typecheck && pnpm run lint && pnpm run test",
+    "typecheck": "tsc --noEmit -p tsconfig.src.json && tsc --noEmit",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "test": "vitest run",
+    "build": "tsup",
+    "docs": "typedoc",
+    "neutrality": "node scripts/engine-neutrality.mjs"
   },
   "devDependencies": {
-    "@types/jest": "^25.2.3",
-    "@typescript-eslint/eslint-plugin": "^3.1.0",
-    "@typescript-eslint/parser": "^3.1.0",
-    "eslint": "^6",
-    "eslint-config-prettier": "^6.11.0",
-    "eslint-plugin-eslint-comments": "^3.2.0",
-    "eslint-plugin-jest": "^23.13.2",
-    "eslint-plugin-prettier": "^3.1.3",
-    "jest": "^26.0.1",
-    "jest-runner-eslint": "^0.9.0",
-    "prettier": "^2.0.5",
-    "ts-jest": "^26.1.0",
-    "typescript": "^3.9.5"
+    "@biomejs/biome": "2.5.13",
+    "@types/node": "24.13.4",
+    "@vitest/coverage-v8": "5.0.1",
+    "tsup": "8.5.1",
+    "tsx": "4.23.13",
+    "typedoc": "0.28.20",
+    "typescript": "5.9.3",
+    "vitest": "5.0.1"
   }
 }

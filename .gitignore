@@ -62,3 +62,19 @@ node_modules/
 # Changelog fragments are tracked. A global gitignore rule for `*.d` (C/C++
 # dependency files) matches this directory name and would otherwise hide them.
 !changelog.d/
+
+# Coverage output, written by the gate's `vitest run --coverage`.
+coverage/
+
+# The generated API reference, built by `pnpm run docs` (typedoc.json). It is
+# built locally and checked by the gate, and never committed.
+/docs/api/
+
+# The wurk kit's detached gate runner writes its run directory here when it is
+# given no run directory. Biome honours this file, so without the rule the gate
+# lints the files its own run wrote.
+/.claude/wurk-runs/
+
+# A packed tarball of this package, written to the checkout root by `npm pack`
+# or `pnpm pack`. It is a build artefact and must never be committed.
+/uxid-*.tgz

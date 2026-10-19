@@ -6,13 +6,7 @@
     "sync": "dolthub",
     "topology": "beads",
     "areas": {
-      "labels": [
-        "area:codec",
-        "area:monotonic",
-        "area:conformance",
-        "area:docs",
-        "area:build"
-      ],
+      "labels": ["area:codec", "area:monotonic", "area:conformance", "area:docs", "area:build"],
       "lands_alone": ["area:build"],
       "always_batchable": ["upstream"]
     }
