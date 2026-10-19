@@ -1,6 +1,6 @@
 {
   "name": "uxid",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "Prefixed, K-sortable identifiers a person can read, wire-compatible with the Elixir uxid package and checked against its conformance corpus.",
   "license": "MIT",
   "author": "JohnnyT <ubergeek3141@gmail.com>",
