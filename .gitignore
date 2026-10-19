@@ -48,3 +48,17 @@ dist/
 
 # The directory NPM downloads your dependencies sources to.
 node_modules/
+
+# Beads / Dolt files (added by bd init)
+.dolt/
+*.db
+.beads-credential-key
+.beads/proxieddb/
+
+# Local beads telemetry churn; the tracker syncs through its own Dolt remote
+# (`sync.remote` in `.beads/config.yaml`), not through this git repository.
+.beads/interactions.jsonl
+
+# Changelog fragments are tracked. A global gitignore rule for `*.d` (C/C++
+# dependency files) matches this directory name and would otherwise hide them.
+!changelog.d/
