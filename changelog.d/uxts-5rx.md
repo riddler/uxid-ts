@@ -1,0 +1,5 @@
+### Added
+
+- `createMonotonic(options?)` returns a monotonic generator, an object whose `generate(options?)` makes time-based ids that stay unique and in order within one millisecond. The generator keeps the last time and the last random value per prefix and random width in the object itself; the library keeps no state of its own. Within a millisecond, or when the clock moves back, an id carries the last time and the last value plus a step drawn uniformly from 1 to 2^(4w) for a field of w bytes; a step that overflows the field moves the time one millisecond forward with a fresh value. A monotonic `xs` uses compact time by default.
+- The `draws` option replaces the generator's random values (a fresh value and a step, each answered as a `bigint` or a safe integer) so known draws can be replayed; by default they come from the byte source, the step masked from whole random bits so that every step is equally likely.
+- The generator refuses `from` with the error code `from_with_monotonic` and `rand` with `rand_with_monotonic`, and refuses standard time at `xs`, a random width of 0 and a draw outside its range with `invalid_option`.
