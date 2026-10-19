@@ -1,0 +1,97 @@
+{
+  "wurk": 1,
+
+  "beads": {
+    "prefix": "uxts",
+    "sync": "dolthub",
+    "topology": "beads",
+    "areas": {
+      "labels": [
+        "area:codec",
+        "area:monotonic",
+        "area:conformance",
+        "area:docs",
+        "area:build"
+      ],
+      "lands_alone": ["area:build"],
+      "always_batchable": ["upstream"]
+    }
+  },
+
+  "forge": {
+    "kind": "github",
+    "labels": {}
+  },
+
+  "gate": {
+    "full": ["mise", "exec", "--", "pnpm", "run", "gate"],
+    "loop": ["mise", "exec", "--", "pnpm", "run", "gate:loop"],
+    "build_paths": [
+      "src/",
+      "test/",
+      "scripts/",
+      "package.json",
+      "pnpm-lock.yaml",
+      "tsconfig.json",
+      "tsconfig.build.json",
+      "tsconfig.src.json",
+      "tsup.config.ts",
+      "vitest.config.ts",
+      "biome.json"
+    ],
+    "also_gated_paths": ["conformance/", "README.md"],
+    "moving_files": ["biome.json", "vitest.config.ts"],
+    "sabotage": {
+      "test_roots": ["test/"],
+      "test_pattern": "\\b(test|it)\\(",
+      "exempt_prefixes": []
+    },
+    "project_level_skips": [],
+    "not_applicable_skips": []
+  },
+
+  "parallelism": {
+    "model": "worktree-per-issue",
+    "worktrees_dir": "../uxid-ts-worktrees",
+    "warm_clone": ["node_modules"],
+    "warm": [["mise", "exec", "--", "pnpm", "install", "--frozen-lockfile"]],
+    "repair_when": "pnpm-lock.yaml",
+    "repair": [["mise", "exec", "--", "pnpm", "install", "--frozen-lockfile"]],
+    "post_branch": []
+  },
+
+  "tmux": {
+    "session": "uxid-ts",
+    "model": "opus"
+  },
+
+  "models": {
+    "direction": "fable"
+  },
+
+  "artifacts": {
+    "plans": "docs/plans",
+    "research": "docs/research",
+    "filename": "YYMMDD-[id-]kebab"
+  },
+
+  "commits": {
+    "style": "s-form",
+    "subject_under": 72,
+    "body_line_max": 72,
+    "total_lines_max": 40,
+    "trailer": {
+      "key": "Refs"
+    }
+  },
+
+  "changelog": {
+    "mode": "fragments",
+    "dir": "changelog.d"
+  },
+
+  "release": {
+    "kind": "npm",
+    "version_file": "package.json"
+  }
+}
