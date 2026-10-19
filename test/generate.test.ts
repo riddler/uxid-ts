@@ -1,39 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { type GenerateOptions, generate, type Size, UxidError } from "../src/index.js";
-import { encodeCases, generateRefusalCases } from "./corpus-subset.js";
-
-interface CaseOptions {
-  readonly prefix?: string | null;
-  readonly size?: Size;
-  readonly compact?: boolean;
-  readonly case?: "lower" | "upper";
-  readonly time?: number;
-  readonly rand?: string;
-  readonly rand_size?: number;
-}
-
-const lines = (text: string) =>
-  text
-    .split("\n")
-    .filter((line) => line !== "")
-    .map((line) => JSON.parse(line));
 
 const bytes = (hex: string) =>
   new Uint8Array((hex.match(/../g) ?? []).map((pair) => Number.parseInt(pair, 16)));
-
-// The corpus spells options as the Elixir package does; this maps them onto
-// this package's names. A null prefix is no prefix.
-function options(input: CaseOptions): GenerateOptions {
-  return {
-    ...(input.prefix != null && { prefix: input.prefix }),
-    ...(input.size !== undefined && { size: input.size }),
-    ...(input.compact !== undefined && { compactTime: input.compact }),
-    ...(input.case !== undefined && { case: input.case }),
-    ...(input.time !== undefined && { time: input.time }),
-    ...(input.rand !== undefined && { rand: bytes(input.rand) }),
-    ...(input.rand_size !== undefined && { randSize: input.rand_size }),
-  };
-}
 
 function refusal(run: () => unknown): UxidError {
   try {
@@ -53,34 +22,6 @@ const counting: (count: number) => Uint8Array = (count) =>
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
-});
-
-describe("the corpus's encode cases", () => {
-  const cases = lines(encodeCases) as { id: string; input: CaseOptions; expected: string }[];
-
-  it("carries the subset it was copied with", () => {
-    expect(cases).toHaveLength(20);
-  });
-
-  // Sabotage: making the last short group in `encodeBytes` shift left (as RFC
-  // 4648 pads) turns the rand-all-ones and partial-width cases red.
-  it.each(cases.map((c) => [c.id, c] as const))("%s", (_id, c) => {
-    expect(generate(options(c.input))).toBe(c.expected);
-  });
-});
-
-describe("the corpus's generation refusals", () => {
-  const cases = lines(generateRefusalCases) as {
-    id: string;
-    input: { generate: CaseOptions };
-    expected_error: string;
-  }[];
-
-  // Sabotage: deleting the marker guard in `encodeTime`, the width check in
-  // `fixed` or the cap check in `readWidth` turns its cases red.
-  it.each(cases.map((c) => [c.id, c] as const))("%s", (_id, c) => {
-    expect(refusal(() => generate(options(c.input.generate))).code).toBe(c.expected_error);
-  });
 });
 
 describe("generate", () => {

@@ -43,7 +43,7 @@
     "access": "public"
   },
   "scripts": {
-    "gate": "node --version && pnpm run typecheck && pnpm run lint && pnpm run neutrality && vitest run --coverage && pnpm run build && pnpm run docs",
+    "gate": "node --version && pnpm run typecheck && pnpm run lint && pnpm run neutrality && vitest run --coverage && pnpm run corpus:check && pnpm run build && pnpm run docs",
     "gate:loop": "pnpm run typecheck && pnpm run lint && pnpm run test",
     "typecheck": "tsc --noEmit -p tsconfig.src.json && tsc --noEmit",
     "lint": "biome check .",
@@ -51,7 +51,8 @@
     "test": "vitest run",
     "build": "tsup",
     "docs": "typedoc",
-    "neutrality": "node scripts/engine-neutrality.mjs"
+    "neutrality": "node scripts/engine-neutrality.mjs",
+    "corpus:check": "node scripts/corpus-check.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.13",
