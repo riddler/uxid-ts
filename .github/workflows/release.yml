@@ -5,10 +5,10 @@ name: Release
 # tag names the version package.json states there, and npm does not already
 # show that version. Then the full quality gate runs there, and the publish
 # happens only if it is green. Nothing else triggers it - no branch push, no
-# pull request, no manual dispatch. A failed run publishes nothing and the tag
-# stays where it is. The one manual act is re-running a run whose publish step
-# failed on a registry or network error, from the run's page in the Actions
-# tab.
+# pull request, no manual dispatch. A run that fails before its publish step
+# publishes nothing, and the tag stays where it is. The one manual act is
+# re-running a run whose publish step failed on a registry or network error,
+# from the run's page in the Actions tab.
 #
 # This file records the publish decision for this repository, which keeps no
 # decision records (CLAUDE.md, "Agent authority in this repo", the paragraph
